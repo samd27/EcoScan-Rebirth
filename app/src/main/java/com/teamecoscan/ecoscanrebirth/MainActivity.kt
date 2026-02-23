@@ -1,0 +1,92 @@
+package com.teamecoscan.ecoscanrebirth
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.teamecoscan.ecoscanrebirth.ui.theme.EcoScanTheme
+import com.teamecoscan.ecoscanrebirth.ui.view.DetectionScreen
+import com.teamecoscan.ecoscanrebirth.ui.view.HomeScreen
+import com.teamecoscan.ecoscanrebirth.ui.view.ListadoScreen
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            EcoScanTheme {
+                val navController = rememberNavController()
+                Scaffold(
+                    bottomBar = {
+                        BottomBar(navController = navController)
+                    }
+                ) { innerPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = "home",
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable("home") { HomeScreen(navController = navController) }
+                        composable("listado") { ListadoScreen(navController = navController) }
+                        composable("camera") { DetectionScreen(onBack = { navController.popBackStack() }) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BottomBar(navController: NavController) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    val showBottomBar = currentDestination?.route in listOf("home", "listado")
+
+    if (showBottomBar) {
+        NavigationBar {
+            NavigationBarItem(
+                icon = { Icon(Icons.Filled.Home, contentDescription = "Inicio") },
+                label = { Text("Inicio") },
+                selected = currentDestination?.hierarchy?.any { it.route == "home" } == true,
+                onClick = {
+                    navController.navigate("home") {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+            NavigationBarItem(
+                icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Listado") },
+                label = { Text("Listado") },
+                selected = currentDestination?.hierarchy?.any { it.route == "listado" } == true,
+                onClick = {
+                    navController.navigate("listado") {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
+    }
+}
