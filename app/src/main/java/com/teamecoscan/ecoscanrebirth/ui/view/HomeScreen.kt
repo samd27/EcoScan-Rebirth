@@ -12,10 +12,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+// Importa WindowInsets
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -32,6 +37,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+// Importa TopAppBarDefaults
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -54,7 +61,9 @@ fun HomeScreen(navController: NavController) {
 
     Scaffold(
         topBar = {
+            // ¡CAMBIO AQUÍ! Agrega windowInsets para que la TopAppBar sepa dónde posicionarse
             TopAppBar(
+                windowInsets = TopAppBarDefaults.windowInsets.exclude(WindowInsets.safeDrawing),
                 title = {
                     val context = LocalContext.current
                     val imageBitmap = remember {
@@ -65,7 +74,7 @@ fun HomeScreen(navController: NavController) {
                     Image(
                         bitmap = imageBitmap,
                         contentDescription = "Logo",
-                        modifier = Modifier.height(80.dp), // Adjust size as needed
+                        modifier = Modifier.height(65.dp), // Adjust size as needed
                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
                     )
                 },
@@ -83,26 +92,30 @@ fun HomeScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                // Aplicamos el padding que nos da el Scaffold para el contenido principal
                 .padding(paddingValues)
+                // Y un padding adicional para los bordes de la pantalla
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(45.dp))
             InformationCard()
-            Spacer(modifier = Modifier.weight(0.2f)) // Move scan button up
+            Spacer(modifier = Modifier.weight(1f))
             ScanSection { navController.navigate("camera") }
             Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
 
+
+// ... (El resto de tu código no necesita cambios)
 @Composable
 fun InformationCard() {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(10.dp), // Keep user's padding
+            modifier = Modifier.padding(20.dp), // Keep user's padding
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(

@@ -33,12 +33,8 @@ import androidx.compose.ui.geometry.Size as ComposeSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -80,9 +76,17 @@ fun DetectionScreen(onBack: () -> Unit) {
         }
     }
 
-    val infoResiduo = detections.maxByOrNull { it.confidence }?.let {
-        ClasificadorEcoScan.obtenerInfoContenedor(it.label)
-    } ?: InfoResiduo("", TipoContenedor.DESCONOCIDO)
+    val topDetection = detections.maxByOrNull { it.confidence }
+    val infoResiduo = topDetection?.let { detection ->
+        val info = ClasificadorEcoScan.obtenerInfoContenedor(detection.label)
+        InfoResiduo(
+            nombreTraducido = info.nombreTraducido,
+            contenedor = info.contenedor,
+            consejoExtra = info.consejoExtra,
+            confidence = detection.confidence
+        )
+    } ?: InfoResiduo(nombreTraducido = "", contenedor = TipoContenedor.DESCONOCIDO, consejoExtra = "", confidence = 0f)
+
 
     // Efecto de vibración cuando la IA está muy segura de haber encontrado basura
     LaunchedEffect(detections) {
@@ -117,7 +121,7 @@ private fun CameraAnalysisView(
         try {
             val modelBuffer = loadModelFile(context, "best_float16.tflite")
             val options = Interpreter.Options().apply {
-                setNumThreads(4) // Usar múltiples núcleos del Pixel 6
+                setNumThreads(4) // Usar múltiples núcleos de tu dispositivo
             }
             Interpreter(modelBuffer, options)
         } catch (e: Exception) {
@@ -163,7 +167,7 @@ private fun CameraAnalysisView(
                             inputBuffer.putFloat((pixelValue and 0xFF) / 255.0f)
                         }
 
-                        // 2. Cálculo dinámico de la memoria (¡Evita crasheos!)
+                        // 2. Cálculo dinámico de la memoria
                         val outputShape = interpreterInstance.getOutputTensor(0).shape() // [1, numElements, 8400]
                         val numElements = outputShape[1]
                         val outputBuffer = ByteBuffer.allocateDirect(4 * numElements * 8400)
@@ -202,7 +206,6 @@ private fun CameraAnalysisView(
 
 @Composable
 private fun DetectionOverlay(detections: List<Detection>, imageSize: Size) {
-    val textMeasurer = rememberTextMeasurer()
     Canvas(modifier = Modifier.fillMaxSize()) {
         val canvasWidth = size.width
         val canvasHeight = size.height
@@ -225,51 +228,22 @@ private fun DetectionOverlay(detections: List<Detection>, imageSize: Size) {
                 size = ComposeSize(rect.width(), rect.height()),
                 style = Stroke(width = 4.dp.toPx())
             )
-
-            // Dibujar el texto
-            val text = "${detection.label} (${(detection.confidence * 100).toInt()}%)"
-            val textLayoutResult = textMeasurer.measure(
-                text,
-                style = TextStyle(color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, background = Color.Black.copy(alpha = 0.6f))
-            )
-            drawText(
-                textLayoutResult,
-                topLeft = Offset(rect.left, rect.top - textLayoutResult.size.height - 8f)
-            )
         }
     }
 }
 
-// OJO AQUÍ: Le pasamos el numElements dinámico
-// OJO AQUÍ: Le pasamos el numElements dinámico y ya está todo 100% en español
+// OJO AQUÍ: Las 6 clases maestras nuevas
 private fun postProcessYoloV8(floatArray: FloatArray, numElements: Int): List<Detection> {
 
-    // Diccionario traducido manteniendo el orden exacto del dataset TACO original
-    val labels = listOf(
-        "Aerosol", "Blíster de aluminio", "Papel aluminio", "Pila / Batería", "Vidrio roto",
-        "Blíster de cartón", "Cigarro", "Botella de plástico transparente", "Cartón corrugado",
-        "Bolsa de frituras", "Envase desechable (Comida)", "Vaso de plástico", "Lata de bebida",
-        "Envase Tetra Pak", "Cartón de huevos", "Vaso de unicel", "Envase de unicel (Comida)",
-        "Lata de comida", "Residuo orgánico", "Bolsa de basura", "Botella de vidrio",
-        "Vaso de vidrio", "Frasco de vidrio", "Papel de revista", "Caja de cartón (Comida)",
-        "Corcholata / Tapa de metal", "Tapadera de metal", "Papel normal", "Otro cartón",
-        "Otro plástico", "Otra botella de plástico", "Otro envase de plástico",
-        "Otro vaso de plástico", "Otra envoltura de plástico", "Bolsa de papel",
-        "Vaso de papel", "Popote de papel", "Caja de pizza", "Tapa de plástico",
-        "Plástico para envolver (Playo)", "Guantes de plástico", "Tapadera de plástico",
-        "Popote de plástico", "Cubiertos de plástico", "Bolsa de polipropileno",
-        "Anilla de lata", "Cuerda / Hilo", "Chatarra de metal", "Zapato",
-        "Bolsa de plástico (Súper)", "Anillos de plástico (Six-pack)", "Tarrina / Envase de untable",
-        "Tubo exprimible", "Pedazo de unicel", "Pañuelos desechables", "Tubo de papel higiénico",
-        "Tupperware / Refractario", "Basura sin clasificar", "Papel de regalo"
-    )
+    // Diccionario actualizado con el dataset optimizado
+    val labels = listOf("Biodegradable", "cardboard", "glass", "metal", "paper", "plastic")
 
     val confThreshold = 0.40f // Certeza mínima para mostrarlo (40%)
     val iouThreshold = 0.50f
     val numDetections = 8400 // Rejilla estándar de YOLOv8
     val detections = mutableListOf<Detection>()
 
-    // Transponer la matriz matemática gigante
+    // Transponer la matriz matemática
     val transposedOutput = Array(numDetections) { FloatArray(numElements) }
     for (i in 0 until numElements) {
         for (j in 0 until numDetections) {
@@ -300,7 +274,7 @@ private fun postProcessYoloV8(floatArray: FloatArray, numElements: Int): List<De
 
             val rect = RectF(left / 640f, top / 640f, right / 640f, bottom / 640f)
 
-            // Asignar el nombre en español
+            // Asignar el nombre
             val labelName = if (classId != -1 && classId < labels.size) labels[classId] else "Objeto_Desc_$classId"
             detections.add(Detection(rect, labelName, maxScore))
         }

@@ -14,21 +14,28 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,10 +52,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.teamecoscan.ecoscanrebirth.ui.theme.EcoScanTheme
@@ -61,6 +70,11 @@ data class Residuo(
     val id: Int,
     val nombre: String,
     val categoria: String,
+    val subcategoria: String,
+    val material: String,
+    val submaterial: String,
+    val descripcion: String,
+    val keywords: String
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,10 +82,13 @@ data class Residuo(
 fun ListadoScreen(navController: NavController) {
     val context = LocalContext.current
     val residuos = remember { parseResiduos(context) }
+    val materials = remember { residuos.map { it.material }.distinct().sorted() }
     var searchText by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("Todos") }
     var sortAscending by remember { mutableStateOf(true) }
     var selectedResiduo by remember { mutableStateOf<Residuo?>(null) }
+    var showFilterDialog by remember { mutableStateOf(false) }
+    var selectedMaterials by remember { mutableStateOf<Set<String>>(emptySet()) }
 
     Column(modifier = Modifier.padding(top = 16.dp, start = 8.dp, end = 8.dp)) {
         OutlinedTextField(
@@ -89,21 +106,30 @@ fun ListadoScreen(navController: NavController) {
             horizontalArrangement = Arrangement.Center
         ) {
             FilterChip(
-                selected = selectedCategory == "Orgánico",
-                onClick = { selectedCategory = if (selectedCategory == "Orgánico") "Todos" else "Orgánico" },
-                label = { Text("Orgánico") }
+                selected = selectedCategory == "Organico",
+                onClick = { selectedCategory = if (selectedCategory == "Organico") "Todos" else "Organico" },
+                label = { Text("Orgánico") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(0xFF4CAF50)
+                )
             )
             Spacer(modifier = Modifier.width(8.dp))
             FilterChip(
                 selected = selectedCategory == "Todos",
                 onClick = { selectedCategory = "Todos" },
-                label = { Text("Todos") }
+                label = { Text("Todos") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(0xFF4CAF50)
+                )
             )
             Spacer(modifier = Modifier.width(8.dp))
             FilterChip(
-                selected = selectedCategory == "Inorgánico",
-                onClick = { selectedCategory = if (selectedCategory == "Inorgánico") "Todos" else "Inorgánico" },
-                label = { Text("Inorgánico") }
+                selected = selectedCategory == "Inorganico",
+                onClick = { selectedCategory = if (selectedCategory == "Inorganico") "Todos" else "Inorganico" },
+                label = { Text("Inorgánico") },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(0xFF4CAF50)
+                )
             )
         }
 
@@ -118,16 +144,17 @@ fun ListadoScreen(navController: NavController) {
                 Icon(Icons.Filled.SwapVert, contentDescription = "Ordenar A-Z")
                 Text(if (sortAscending) "A-Z" else "Z-A")
             }
-            TextButton(onClick = {}) {
+            TextButton(onClick = { showFilterDialog = true }) {
                 Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
                 Text("Filtros")
             }
         }
 
-        val filteredResiduos = remember(selectedCategory, searchText) {
+        val filteredResiduos = remember(selectedCategory, searchText, selectedMaterials) {
             residuos.filter {
                 (selectedCategory == "Todos" || it.categoria.trim().equals(selectedCategory, ignoreCase = true)) &&
-                        (searchText.isBlank() || it.nombre.contains(searchText, ignoreCase = true))
+                        (searchText.isBlank() || it.nombre.contains(searchText, ignoreCase = true)) &&
+                        (selectedMaterials.isEmpty() || selectedMaterials.contains(it.material))
             }
         }
 
@@ -151,12 +178,97 @@ fun ListadoScreen(navController: NavController) {
         }
 
         if (selectedResiduo != null) {
-            Dialog(onDismissRequest = { selectedResiduo = null }) {
+            Dialog(
+                onDismissRequest = { selectedResiduo = null },
+                properties = DialogProperties(usePlatformDefaultWidth = false)
+            ) {
                 ResiduoDetailCard(residuo = selectedResiduo!!)
+            }
+        }
+
+        if (showFilterDialog) {
+            FilterDialog(
+                materials = materials,
+                selectedMaterials = selectedMaterials,
+                onDismissRequest = { showFilterDialog = false },
+                onApplyFilters = {
+                    selectedMaterials = it
+                    showFilterDialog = false
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun FilterDialog(
+    materials: List<String>,
+    selectedMaterials: Set<String>,
+    onDismissRequest: () -> Unit,
+    onApplyFilters: (Set<String>) -> Unit
+) {
+    var tempSelectedMaterials by remember { mutableStateOf(selectedMaterials) }
+
+    Dialog(onDismissRequest = onDismissRequest) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Filtrar por material", style = MaterialTheme.typography.headlineSmall)
+                Spacer(modifier = Modifier.height(16.dp))
+                LazyColumn(modifier = Modifier.weight(1.0f)) {
+                    items(materials) { material ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { /* Toggle selection */
+                                    val newSelection = tempSelectedMaterials.toMutableSet()
+                                    if (newSelection.contains(material)) {
+                                        newSelection.remove(material)
+                                    } else {
+                                        newSelection.add(material)
+                                    }
+                                    tempSelectedMaterials = newSelection
+                                }
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Checkbox(
+                                checked = tempSelectedMaterials.contains(material),
+                                onCheckedChange = { isChecked ->
+                                    val newSelection = tempSelectedMaterials.toMutableSet()
+                                    if (isChecked) {
+                                        newSelection.add(material)
+                                    } else {
+                                        newSelection.remove(material)
+                                    }
+                                    tempSelectedMaterials = newSelection
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(material)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismissRequest) {
+                        Text("Cancelar")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = { onApplyFilters(tempSelectedMaterials) }) {
+                        Text("Aplicar")
+                    }
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun ResiduoCard(residuo: Residuo, onClick: () -> Unit) {
@@ -190,7 +302,10 @@ fun ResiduoCard(residuo: Residuo, onClick: () -> Unit) {
             .fillMaxWidth()
             .height(200.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        )
     ) {
         Column(
             modifier = Modifier.padding(8.dp),
@@ -209,7 +324,7 @@ fun ResiduoCard(residuo: Residuo, onClick: () -> Unit) {
                     Image(
                         bitmap = imageBitmap!!,
                         contentDescription = residuo.nombre,
-                        contentScale = ContentScale.Crop,
+                        contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -223,7 +338,7 @@ fun ResiduoCard(residuo: Residuo, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyLarge
             )
-            val categoryColor = if (residuo.categoria.trim().equals("Orgánico", ignoreCase = true) || residuo.categoria.trim().equals("Inorgánico", ignoreCase = true)) {
+            val categoryColor = if (residuo.categoria.trim().equals("Organico", ignoreCase = true) || residuo.categoria.trim().equals("Inorganico", ignoreCase = true)) {
                 Color(0xFF4CAF50) // Specific green color
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
@@ -271,46 +386,70 @@ fun ResiduoDetailCard(residuo: Residuo) {
             .padding(16.dp),
         shape = RoundedCornerShape(16.dp)
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(
-                modifier = Modifier
-                    .height(200.dp)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator()
-                } else if (imageBitmap != null) {
-                    Image(
-                        bitmap = imageBitmap!!,
-                        contentDescription = residuo.nombre,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+            item {
+                Box(
+                    modifier = Modifier
+                        .height(200.dp)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator()
+                    } else if (imageBitmap != null) {
+                        Image(
+                            bitmap = imageBitmap!!,
+                            contentDescription = residuo.nombre,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = residuo.nombre,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // Bentobox layout
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        InfoBox(label = "Categoría", value = residuo.categoria, modifier = Modifier.weight(1f))
+                        InfoBox(label = "Subcategoría", value = residuo.subcategoria, modifier = Modifier.weight(1f))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        InfoBox(label = "Material", value = residuo.material, modifier = Modifier.weight(1f))
+                        if (residuo.submaterial.isNotBlank()) {
+                            InfoBox(label = "Submaterial", value = residuo.submaterial, modifier = Modifier.weight(1f))
+                        }
+                    }
+                    InfoBox(label = "Descripción", value = residuo.descripcion)
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun InfoBox(label: String, value: String, modifier: Modifier = Modifier) {
+    Card(modifier = modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = residuo.nombre,
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.headlineSmall
+                color = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            val categoryColor = if (residuo.categoria.trim().equals("Orgánico", ignoreCase = true) || residuo.categoria.trim().equals("Inorgánico", ignoreCase = true)) {
-                Color(0xFF4CAF50) // Specific green color
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            }
-            Text(
-                text = residuo.categoria.uppercase(),
-                color = categoryColor,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            // Add more details here if needed
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = value, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
@@ -331,7 +470,12 @@ fun parseResiduos(context: Context): List<Residuo> {
             Residuo(
                 id = jsonObject.getInt("id"),
                 nombre = jsonObject.getString("nombre"),
-                categoria = jsonObject.getString("categoria")
+                categoria = jsonObject.getString("categoria"),
+                subcategoria = jsonObject.getString("subcategoria"),
+                material = jsonObject.getString("material"),
+                submaterial = jsonObject.getString("submaterial"),
+                descripcion = jsonObject.getString("descripcion"),
+                keywords = jsonObject.getString("keywords")
             )
         )
     }

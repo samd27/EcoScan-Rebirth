@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -11,10 +13,12 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -24,6 +28,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.teamecoscan.ecoscanrebirth.ui.theme.EcoScanTheme
+import com.teamecoscan.ecoscanrebirth.ui.theme.Green
+import com.teamecoscan.ecoscanrebirth.ui.theme.LightGreen
 import com.teamecoscan.ecoscanrebirth.ui.view.DetectionScreen
 import com.teamecoscan.ecoscanrebirth.ui.view.HomeScreen
 import com.teamecoscan.ecoscanrebirth.ui.view.ListadoScreen
@@ -63,6 +69,10 @@ fun BottomBar(navController: NavController) {
 
     if (showBottomBar) {
         NavigationBar {
+            val homeInteractionSource = remember { MutableInteractionSource() }
+            val isHomePressed by homeInteractionSource.collectIsPressedAsState()
+            val homeIndicatorColor = if (isHomePressed) LightGreen else Green
+
             NavigationBarItem(
                 icon = { Icon(Icons.Filled.Home, contentDescription = "Inicio") },
                 label = { Text("Inicio") },
@@ -73,8 +83,17 @@ fun BottomBar(navController: NavController) {
                         launchSingleTop = true
                         restoreState = true
                     }
-                }
+                },
+                interactionSource = homeInteractionSource,
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = homeIndicatorColor
+                )
             )
+
+            val listadoInteractionSource = remember { MutableInteractionSource() }
+            val isListadoPressed by listadoInteractionSource.collectIsPressedAsState()
+            val listadoIndicatorColor = if (isListadoPressed) LightGreen else Green
+
             NavigationBarItem(
                 icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Listado") },
                 label = { Text("Listado") },
@@ -85,7 +104,11 @@ fun BottomBar(navController: NavController) {
                         launchSingleTop = true
                         restoreState = true
                     }
-                }
+                },
+                interactionSource = listadoInteractionSource,
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = listadoIndicatorColor
+                )
             )
         }
     }
