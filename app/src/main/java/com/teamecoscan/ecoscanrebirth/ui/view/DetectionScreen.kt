@@ -17,6 +17,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -79,6 +80,10 @@ fun DetectionScreen(onBack: () -> Unit) {
         }
     }
 
+    val infoResiduo = detections.maxByOrNull { it.confidence }?.let {
+        ClasificadorEcoScan.obtenerInfoContenedor(it.label)
+    } ?: InfoResiduo("", TipoContenedor.DESCONOCIDO)
+
     // Efecto de vibración cuando la IA está muy segura de haber encontrado basura
     LaunchedEffect(detections) {
         if (detections.any { it.confidence > 0.70f }) {
@@ -92,7 +97,11 @@ fun DetectionScreen(onBack: () -> Unit) {
             imageSize = size
         })
         DetectionOverlay(detections = detections, imageSize = imageSize)
-        TopBar(onBack = onBack)
+        Column(modifier = Modifier.fillMaxSize()) {
+            TopBar(onBack = onBack)
+            Box(modifier = Modifier.weight(1f)) // Espacio flexible para empujar la tarjeta hacia abajo
+            TarjetaInstruccion(info = infoResiduo)
+        }
     }
 }
 
