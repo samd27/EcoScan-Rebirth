@@ -1,6 +1,8 @@
 package com.teamecoscan.ecoscanrebirth
 
 import android.os.Bundle
+import android.view.HapticFeedbackConstants
+import android.view.SoundEffectConstants
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -66,6 +69,7 @@ fun BottomBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val showBottomBar = currentDestination?.route in listOf("home", "listado")
+    val view = LocalView.current
 
     if (showBottomBar) {
         NavigationBar {
@@ -78,6 +82,8 @@ fun BottomBar(navController: NavController) {
                 label = { Text("Inicio") },
                 selected = currentDestination?.hierarchy?.any { it.route == "home" } == true,
                 onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    view.playSoundEffect(SoundEffectConstants.CLICK)
                     navController.navigate("home") {
                         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                         launchSingleTop = true
@@ -99,6 +105,8 @@ fun BottomBar(navController: NavController) {
                 label = { Text("Listado") },
                 selected = currentDestination?.hierarchy?.any { it.route == "listado" } == true,
                 onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    view.playSoundEffect(SoundEffectConstants.CLICK)
                     navController.navigate("listado") {
                         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                         launchSingleTop = true

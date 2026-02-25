@@ -10,6 +10,8 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
 import android.util.Size
+import android.view.HapticFeedbackConstants
+import android.view.SoundEffectConstants
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -33,6 +35,7 @@ import androidx.compose.ui.geometry.Size as ComposeSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -324,6 +327,7 @@ fun RectF.height(): Float = this.bottom - this.top
 
 @Composable
 private fun TopBar(onBack: () -> Unit) {
+    val view = LocalView.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -335,7 +339,11 @@ private fun TopBar(onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 4.dp),
             contentAlignment = Alignment.Center
         ) {
-            IconButton(onClick = onBack, modifier = Modifier.align(Alignment.CenterStart)) {
+            IconButton(onClick = {
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                view.playSoundEffect(SoundEffectConstants.CLICK)
+                onBack()
+            }, modifier = Modifier.align(Alignment.CenterStart)) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = MaterialTheme.colorScheme.onSurface)
             }
             Text("EcoScan", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)

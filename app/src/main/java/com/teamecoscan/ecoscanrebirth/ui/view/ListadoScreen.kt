@@ -1,6 +1,8 @@
 package com.teamecoscan.ecoscanrebirth.ui.view
 
 import android.content.Context
+import android.view.HapticFeedbackConstants
+import android.view.SoundEffectConstants
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +53,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -81,6 +84,7 @@ data class Residuo(
 @Composable
 fun ListadoScreen(navController: NavController) {
     val context = LocalContext.current
+    val view = LocalView.current
     val residuos = remember { parseResiduos(context) }
     val materials = remember { residuos.map { it.material }.distinct().sorted() }
     var searchText by remember { mutableStateOf("") }
@@ -107,7 +111,11 @@ fun ListadoScreen(navController: NavController) {
         ) {
             FilterChip(
                 selected = selectedCategory == "Organico",
-                onClick = { selectedCategory = if (selectedCategory == "Organico") "Todos" else "Organico" },
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    view.playSoundEffect(SoundEffectConstants.CLICK)
+                    selectedCategory = if (selectedCategory == "Organico") "Todos" else "Organico"
+                },
                 label = { Text("Orgánico") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Color(0xFF4CAF50)
@@ -116,7 +124,11 @@ fun ListadoScreen(navController: NavController) {
             Spacer(modifier = Modifier.width(8.dp))
             FilterChip(
                 selected = selectedCategory == "Todos",
-                onClick = { selectedCategory = "Todos" },
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    view.playSoundEffect(SoundEffectConstants.CLICK)
+                    selectedCategory = "Todos"
+                },
                 label = { Text("Todos") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Color(0xFF4CAF50)
@@ -125,7 +137,11 @@ fun ListadoScreen(navController: NavController) {
             Spacer(modifier = Modifier.width(8.dp))
             FilterChip(
                 selected = selectedCategory == "Inorganico",
-                onClick = { selectedCategory = if (selectedCategory == "Inorganico") "Todos" else "Inorganico" },
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    view.playSoundEffect(SoundEffectConstants.CLICK)
+                    selectedCategory = if (selectedCategory == "Inorganico") "Todos" else "Inorganico"
+                },
                 label = { Text("Inorgánico") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Color(0xFF4CAF50)
@@ -140,11 +156,19 @@ fun ListadoScreen(navController: NavController) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = { sortAscending = !sortAscending }) {
+            TextButton(onClick = {
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                view.playSoundEffect(SoundEffectConstants.CLICK)
+                sortAscending = !sortAscending
+            }) {
                 Icon(Icons.Filled.SwapVert, contentDescription = "Ordenar A-Z")
                 Text(if (sortAscending) "A-Z" else "Z-A")
             }
-            TextButton(onClick = { showFilterDialog = true }) {
+            TextButton(onClick = {
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                view.playSoundEffect(SoundEffectConstants.CLICK)
+                showFilterDialog = true
+            }) {
                 Icon(Icons.Filled.FilterList, contentDescription = "Filtros")
                 Text("Filtros")
             }
@@ -179,7 +203,11 @@ fun ListadoScreen(navController: NavController) {
 
         if (selectedResiduo != null) {
             Dialog(
-                onDismissRequest = { selectedResiduo = null },
+                onDismissRequest = {
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    view.playSoundEffect(SoundEffectConstants.CLICK)
+                    selectedResiduo = null
+                },
                 properties = DialogProperties(usePlatformDefaultWidth = false)
             ) {
                 ResiduoDetailCard(residuo = selectedResiduo!!)
@@ -208,6 +236,7 @@ fun FilterDialog(
     onApplyFilters: (Set<String>) -> Unit
 ) {
     var tempSelectedMaterials by remember { mutableStateOf(selectedMaterials) }
+    val view = LocalView.current
 
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(
@@ -224,6 +253,8 @@ fun FilterDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { /* Toggle selection */
+                                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                    view.playSoundEffect(SoundEffectConstants.CLICK)
                                     val newSelection = tempSelectedMaterials.toMutableSet()
                                     if (newSelection.contains(material)) {
                                         newSelection.remove(material)
@@ -237,6 +268,8 @@ fun FilterDialog(
                             Checkbox(
                                 checked = tempSelectedMaterials.contains(material),
                                 onCheckedChange = { isChecked ->
+                                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                    view.playSoundEffect(SoundEffectConstants.CLICK)
                                     val newSelection = tempSelectedMaterials.toMutableSet()
                                     if (isChecked) {
                                         newSelection.add(material)
@@ -256,11 +289,19 @@ fun FilterDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismissRequest) {
+                    TextButton(onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        view.playSoundEffect(SoundEffectConstants.CLICK)
+                        onDismissRequest()
+                    }) {
                         Text("Cancelar")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = { onApplyFilters(tempSelectedMaterials) }) {
+                    Button(onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        view.playSoundEffect(SoundEffectConstants.CLICK)
+                        onApplyFilters(tempSelectedMaterials)
+                    }) {
                         Text("Aplicar")
                     }
                 }
@@ -273,6 +314,7 @@ fun FilterDialog(
 @Composable
 fun ResiduoCard(residuo: Residuo, onClick: () -> Unit) {
     val context = LocalContext.current
+    val view = LocalView.current
     var imageBitmap by remember(residuo.id) { mutableStateOf<ImageBitmap?>(null) }
     var isLoading by remember(residuo.id) { mutableStateOf(true) }
 
@@ -301,7 +343,11 @@ fun ResiduoCard(residuo: Residuo, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(200.dp)
-            .clickable(onClick = onClick),
+            .clickable(onClick = {
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                view.playSoundEffect(SoundEffectConstants.CLICK)
+                onClick()
+            }),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent

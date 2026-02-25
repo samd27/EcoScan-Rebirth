@@ -4,10 +4,13 @@ import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.view.HapticFeedbackConstants
+import android.view.SoundEffectConstants
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -58,6 +62,7 @@ import com.teamecoscan.ecoscanrebirth.ui.theme.EcoScanTheme
 @Composable
 fun HomeScreen(navController: NavController) {
     val activity = LocalContext.current as? Activity
+    val view = LocalView.current
 
     Scaffold(
         topBar = {
@@ -79,7 +84,11 @@ fun HomeScreen(navController: NavController) {
                     )
                 },
                 actions = {
-                    IconButton(onClick = { activity?.finish() }) {
+                    IconButton(onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        view.playSoundEffect(SoundEffectConstants.CLICK)
+                        activity?.finish()
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Logout,
                             contentDescription = "Salir"
@@ -111,8 +120,15 @@ fun HomeScreen(navController: NavController) {
 // ... (El resto de tu código no necesita cambios)
 @Composable
 fun InformationCard() {
+    val view = LocalView.current
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                view.playSoundEffect(SoundEffectConstants.CLICK)
+                // Navigate to information screen
+            }
     ) {
         Row(
             modifier = Modifier.padding(20.dp), // Keep user's padding
@@ -142,6 +158,7 @@ fun InformationCard() {
 @Composable
 fun ScanSection(onScanClick: () -> Unit) {
     val context = LocalContext.current
+    val view = LocalView.current
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -160,6 +177,8 @@ fun ScanSection(onScanClick: () -> Unit) {
         Spacer(modifier = Modifier.height(32.dp))
         FloatingActionButton(
             onClick = {
+                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                view.playSoundEffect(SoundEffectConstants.CLICK)
                 when (PackageManager.PERMISSION_GRANTED) {
                     ContextCompat.checkSelfPermission(
                         context,
