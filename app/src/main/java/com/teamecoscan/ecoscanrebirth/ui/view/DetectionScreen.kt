@@ -327,7 +327,7 @@ private fun TopBar(onBack: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 65.dp, start = 16.dp, end = 16.dp),
+            .padding(top = 35.dp, start = 16.dp, end = 16.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
     ) {

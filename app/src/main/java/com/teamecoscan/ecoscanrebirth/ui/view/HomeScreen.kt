@@ -74,7 +74,7 @@ fun HomeScreen(navController: NavController) {
                     Image(
                         bitmap = imageBitmap,
                         contentDescription = "Logo",
-                        modifier = Modifier.height(65.dp), // Adjust size as needed
+                        modifier = Modifier.height(90.dp), // Adjust size as needed
                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
                     )
                 },
