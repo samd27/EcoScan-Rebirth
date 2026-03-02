@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -43,6 +44,7 @@ import androidx.compose.material3.TopAppBar
 // Importa TopAppBarDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,55 +65,63 @@ import com.teamecoscan.ecoscanrebirth.ui.theme.EcoScanTheme
 fun HomeScreen(navController: NavController) {
     val activity = LocalContext.current as? Activity
     val view = LocalView.current
+    val showInformationModal = remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            // ¡CAMBIO AQUÍ! Agrega windowInsets para que la TopAppBar sepa dónde posicionarse
-            TopAppBar(
-                windowInsets = TopAppBarDefaults.windowInsets.exclude(WindowInsets.safeDrawing),
-                title = {
-                    val context = LocalContext.current
-                    val imageBitmap = remember {
-                        context.assets.open("app_icon/Icono_.png").use {
-                            BitmapFactory.decodeStream(it).asImageBitmap()
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                // ¡CAMBIO AQUÍ! Agrega windowInsets para que la TopAppBar sepa dónde posicionarse
+                TopAppBar(
+                    windowInsets = TopAppBarDefaults.windowInsets.exclude(WindowInsets.safeDrawing),
+                    title = {
+                        val context = LocalContext.current
+                        val imageBitmap = remember {
+                            context.assets.open("app_icon/Icono_.png").use {
+                                BitmapFactory.decodeStream(it).asImageBitmap()
+                            }
+                        }
+                        Image(
+                            bitmap = imageBitmap,
+                            contentDescription = "Logo",
+                            modifier = Modifier.height(90.dp), // Adjust size as needed
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+                        )
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            view.playSoundEffect(SoundEffectConstants.CLICK)
+                            activity?.finish()
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Logout,
+                                contentDescription = "Salir"
+                            )
                         }
                     }
-                    Image(
-                        bitmap = imageBitmap,
-                        contentDescription = "Logo",
-                        modifier = Modifier.height(90.dp), // Adjust size as needed
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
-                    )
-                },
-                actions = {
-                    IconButton(onClick = {
-                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                        view.playSoundEffect(SoundEffectConstants.CLICK)
-                        activity?.finish()
-                    }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = "Salir"
-                        )
-                    }
-                }
-            )
+                )
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    // Aplicamos el padding que nos da el Scaffold para el contenido principal
+                    .padding(paddingValues)
+                    // Y un padding adicional para los bordes de la pantalla
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(45.dp))
+                InformationCard(onOpenModal = { showInformationModal.value = true })
+                Spacer(modifier = Modifier.weight(1f))
+                ScanSection { navController.navigate("camera") }
+                Spacer(modifier = Modifier.weight(1f))
+            }
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                // Aplicamos el padding que nos da el Scaffold para el contenido principal
-                .padding(paddingValues)
-                // Y un padding adicional para los bordes de la pantalla
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(45.dp))
-            InformationCard()
-            Spacer(modifier = Modifier.weight(1f))
-            ScanSection { navController.navigate("camera") }
-            Spacer(modifier = Modifier.weight(1f))
+
+        // Modal se renderiza al frente de todo
+        if (showInformationModal.value) {
+            InformationModal(onDismiss = { showInformationModal.value = false })
         }
     }
 }
@@ -119,7 +129,7 @@ fun HomeScreen(navController: NavController) {
 
 // ... (El resto de tu código no necesita cambios)
 @Composable
-fun InformationCard() {
+fun InformationCard(onOpenModal: () -> Unit) {
     val view = LocalView.current
     ElevatedCard(
         modifier = Modifier
@@ -127,7 +137,7 @@ fun InformationCard() {
             .clickable {
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 view.playSoundEffect(SoundEffectConstants.CLICK)
-                // Navigate to information screen
+                onOpenModal()
             }
     ) {
         Row(
