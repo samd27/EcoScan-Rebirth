@@ -44,6 +44,7 @@ import androidx.compose.material3.TopAppBar
 // Importa TopAppBarDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -58,35 +59,52 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.teamecoscan.ecoscanrebirth.data.PreferencesManager
 import com.teamecoscan.ecoscanrebirth.ui.theme.EcoScanTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavController, showWelcomeModal: androidx.compose.runtime.MutableState<Boolean>? = null) {
     val activity = LocalContext.current as? Activity
+    val context = LocalContext.current
     val view = LocalView.current
+
+    // Crear PreferencesManager una sola vez
+    val preferencesManager = remember(Unit) { PreferencesManager(context) }
+
     val showInformationModal = remember { mutableStateOf(false) }
+
+    // Usar el estado global si se proporciona, si no crear uno local
+    val welcomeModalState = showWelcomeModal ?: remember(Unit) { mutableStateOf(preferencesManager.shouldShowWelcome()) }
+
+    // Cargar el logo una sola vez y reutilizarlo
+    val imageBitmap = remember(Unit) {
+        try {
+            context.assets.open("app_icon/Icono_.png").use {
+                BitmapFactory.decodeStream(it).asImageBitmap()
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
                 // ¡CAMBIO AQUÍ! Agrega windowInsets para que la TopAppBar sepa dónde posicionarse
-                TopAppBar(
-                    windowInsets = TopAppBarDefaults.windowInsets.exclude(WindowInsets.safeDrawing),
-                    title = {
-                        val context = LocalContext.current
-                        val imageBitmap = remember {
-                            context.assets.open("app_icon/Icono_.png").use {
-                                BitmapFactory.decodeStream(it).asImageBitmap()
-                            }
-                        }
+            TopAppBar(
+                windowInsets = TopAppBarDefaults.windowInsets.exclude(WindowInsets.safeDrawing),
+                title = {
+                    if (imageBitmap != null) {
                         Image(
                             bitmap = imageBitmap,
                             contentDescription = "Logo",
-                            modifier = Modifier.height(90.dp), // Adjust size as needed
+                            modifier = Modifier.height(90.dp),
                             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
                         )
-                    },
+                    }
+                },
                     actions = {
                         IconButton(onClick = {
                             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
@@ -119,9 +137,20 @@ fun HomeScreen(navController: NavController) {
             }
         }
 
-        // Modal se renderiza al frente de todo
+        // Modal de información se renderiza al frente
         if (showInformationModal.value) {
             InformationModal(onDismiss = { showInformationModal.value = false })
+        }
+
+        // Modal de bienvenida se renderiza al frente
+        if (welcomeModalState.value) {
+            WelcomeModal(
+                onDismiss = { welcomeModalState.value = false },
+                onDontShowAgain = {
+                    preferencesManager.setWelcomeShown()
+                    welcomeModalState.value = false
+                }
+            )
         }
     }
 }

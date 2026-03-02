@@ -20,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
@@ -44,6 +45,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             EcoScanTheme {
                 val navController = rememberNavController()
+                // Estado global para el modal de bienvenida - persiste en toda la app
+                val preferencesManagerGlobal = remember { com.teamecoscan.ecoscanrebirth.data.PreferencesManager(this) }
+                val showWelcomeModal = remember { mutableStateOf(preferencesManagerGlobal.shouldShowWelcome()) }
+
                 Scaffold(
                     bottomBar = {
                         BottomBar(navController = navController)
@@ -54,7 +59,7 @@ class MainActivity : ComponentActivity() {
                         startDestination = "home",
                         modifier = Modifier.padding(innerPadding)
                     ) {
-                        composable("home") { HomeScreen(navController = navController) }
+                        composable("home") { HomeScreen(navController = navController, showWelcomeModal = showWelcomeModal) }
                         composable("listado") { ListadoScreen(navController = navController) }
                         composable("camera") { DetectionScreen(onBack = { navController.popBackStack() }) }
                     }
