@@ -10,15 +10,14 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-// Importa WindowInsets
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,11 +26,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -41,14 +42,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-// Importa TopAppBarDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -69,15 +72,10 @@ fun HomeScreen(navController: NavController, showWelcomeModal: androidx.compose.
     val context = LocalContext.current
     val view = LocalView.current
 
-    // Crear PreferencesManager una sola vez
     val preferencesManager = remember(Unit) { PreferencesManager(context) }
-
     val showInformationModal = remember { mutableStateOf(false) }
-
-    // Usar el estado global si se proporciona, si no crear uno local
     val welcomeModalState = showWelcomeModal ?: remember(Unit) { mutableStateOf(preferencesManager.shouldShowWelcome()) }
 
-    // Cargar el logo una sola vez y reutilizarlo
     val imageBitmap = remember(Unit) {
         try {
             context.assets.open("app_icon/Icono_.png").use {
@@ -88,23 +86,23 @@ fun HomeScreen(navController: NavController, showWelcomeModal: androidx.compose.
         }
     }
 
-
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-                // ¡CAMBIO AQUÍ! Agrega windowInsets para que la TopAppBar sepa dónde posicionarse
-            TopAppBar(
-                windowInsets = TopAppBarDefaults.windowInsets.exclude(WindowInsets.safeDrawing),
-                title = {
-                    if (imageBitmap != null) {
-                        Image(
-                            bitmap = imageBitmap,
-                            contentDescription = "Logo",
-                            modifier = Modifier.height(90.dp),
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
-                        )
-                    }
-                },
+                TopAppBar(
+                    windowInsets = TopAppBarDefaults.windowInsets.exclude(WindowInsets.safeDrawing),
+                    title = {
+                        if (imageBitmap != null) {
+                            Image(
+                                bitmap = imageBitmap,
+                                contentDescription = "Logo",
+                                modifier = Modifier.height(100.dp), // Logo más grande
+                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary) // Color verde
+                            )
+                        } else {
+                            Text("EcoScan", fontWeight = FontWeight.Bold)
+                        }
+                    },
                     actions = {
                         IconButton(onClick = {
                             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
@@ -113,36 +111,56 @@ fun HomeScreen(navController: NavController, showWelcomeModal: androidx.compose.
                         }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Logout,
-                                contentDescription = "Salir"
+                                contentDescription = "Salir",
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    )
                 )
             }
         ) { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    // Aplicamos el padding que nos da el Scaffold para el contenido principal
                     .padding(paddingValues)
-                    // Y un padding adicional para los bordes de la pantalla
-                    .padding(16.dp),
+                    .padding(horizontal = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(45.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Hola,",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = "¡Cuidemos el planeta!",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+                
                 InformationCard(onOpenModal = { showInformationModal.value = true })
+                
                 Spacer(modifier = Modifier.weight(1f))
+                
                 ScanSection { navController.navigate("camera") }
-                Spacer(modifier = Modifier.weight(1f))
+                
+                Spacer(modifier = Modifier.weight(1.2f))
             }
         }
 
-        // Modal de información se renderiza al frente
         if (showInformationModal.value) {
             InformationModal(onDismiss = { showInformationModal.value = false })
         }
 
-        // Modal de bienvenida se renderiza al frente
         if (welcomeModalState.value) {
             WelcomeModal(
                 onDismiss = { welcomeModalState.value = false },
@@ -155,8 +173,6 @@ fun HomeScreen(navController: NavController, showWelcomeModal: androidx.compose.
     }
 }
 
-
-// ... (El resto de tu código no necesita cambios)
 @Composable
 fun InformationCard(onOpenModal: () -> Unit) {
     val view = LocalView.current
@@ -167,28 +183,62 @@ fun InformationCard(onOpenModal: () -> Unit) {
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 view.playSoundEffect(SoundEffectConstants.CLICK)
                 onOpenModal()
-            }
+            },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 6.dp,
+            pressedElevation = 2.dp
+        )
     ) {
         Row(
-            modifier = Modifier.padding(20.dp), // Keep user's padding
+            modifier = Modifier
+                .padding(20.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Info,
-                contentDescription = "Info",
-                modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
+                        ),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = "Info",
+                    modifier = Modifier.size(30.dp),
+                    tint = Color.White
+                )
+            }
+            
             Column(modifier = Modifier
                 .weight(1f)
-                .padding(start = 16.dp)) {
-                Text(text = "Centro de Información", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(text = "Aprende a clasificar residuos.", style = MaterialTheme.typography.bodyMedium)
+                .padding(horizontal = 16.dp)) {
+                Text(
+                    text = "Centro de Información",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Aprende a clasificar tus residuos de forma experta.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
             }
+            
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                 contentDescription = "Arrow",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.primary
             )
         }
     }
@@ -204,7 +254,7 @@ fun ScanSection(onScanClick: () -> Unit) {
         if (isGranted) {
             onScanClick()
         } else {
-            Toast.makeText(context, "Permission Denied", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Permiso denegado", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -212,35 +262,65 @@ fun ScanSection(onScanClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "Toca para escanear un residuo.", style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = "Toca para escanear",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        
         Spacer(modifier = Modifier.height(32.dp))
-        FloatingActionButton(
-            onClick = {
-                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                view.playSoundEffect(SoundEffectConstants.CLICK)
-                when (PackageManager.PERMISSION_GRANTED) {
-                    ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.CAMERA
-                    ) -> {
-                        onScanClick()
-                    }
-                    else -> {
-                        permissionLauncher.launch(Manifest.permission.CAMERA)
-                    }
-                }
-            },
-            shape = CircleShape,
-            modifier = Modifier.size(185.dp),
-            containerColor = MaterialTheme.colorScheme.primary
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.CameraAlt,
-                contentDescription = "Scan",
-                modifier = Modifier.size(95.dp),
-                tint = MaterialTheme.colorScheme.onPrimary
+        
+        Box(contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .size(220.dp)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
             )
+            Box(
+                modifier = Modifier
+                    .size(195.dp)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape)
+            )
+            
+            FloatingActionButton(
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    view.playSoundEffect(SoundEffectConstants.CLICK)
+                    when (PackageManager.PERMISSION_GRANTED) {
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.CAMERA
+                        ) -> {
+                            onScanClick()
+                        }
+                        else -> {
+                            permissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    }
+                },
+                shape = CircleShape,
+                modifier = Modifier
+                    .size(160.dp)
+                    .shadow(16.dp, CircleShape),
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.CameraAlt,
+                    contentDescription = "Scan",
+                    modifier = Modifier.size(80.dp),
+                    tint = Color.White
+                )
+            }
         }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Text(
+            text = "Usa la IA para identificar materiales",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+        )
     }
 }
 

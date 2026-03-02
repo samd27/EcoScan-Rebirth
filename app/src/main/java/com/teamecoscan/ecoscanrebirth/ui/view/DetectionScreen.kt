@@ -18,11 +18,18 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -30,8 +37,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size as ComposeSize
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
@@ -105,7 +114,7 @@ fun DetectionScreen(onBack: () -> Unit) {
         })
         DetectionOverlay(detections = detections, imageSize = imageSize)
         Column(modifier = Modifier.fillMaxSize()) {
-            TopBar(onBack = onBack)
+            CustomTopBar(onBack = onBack)
             Box(modifier = Modifier.weight(1f)) // Espacio flexible para empujar la tarjeta hacia abajo
             TarjetaInstruccion(info = infoResiduo)
         }
@@ -224,12 +233,12 @@ private fun DetectionOverlay(detections: List<Detection>, imageSize: Size) {
                 boundingBox.bottom * scaleY
             )
 
-            // Dibujar la caja amarilla
+            // Dibujar la caja con estilo Premium
             drawRect(
-                color = Color.Yellow,
+                color = Color(0xFF8BC34A), // Verde característico
                 topLeft = Offset(rect.left, rect.top),
                 size = ComposeSize(rect.width(), rect.height()),
-                style = Stroke(width = 4.dp.toPx())
+                style = Stroke(width = 3.dp.toPx())
             )
         }
     }
@@ -322,31 +331,46 @@ private fun calculateIOU(rect1: RectF, rect2: RectF): Float {
     return if (unionArea > 0) intersectionArea / unionArea else 0f
 }
 
-fun RectF.width(): Float = this.right - this.left
-fun RectF.height(): Float = this.bottom - this.top
-
 @Composable
-private fun TopBar(onBack: () -> Unit) {
+private fun CustomTopBar(onBack: () -> Unit) {
     val view = LocalView.current
-    Card(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 35.dp, start = 16.dp, end = 16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
+            .padding(top = 40.dp, start = 16.dp, end = 16.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp)
     ) {
         Box(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 4.dp),
+            modifier = Modifier.fillMaxWidth().padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
-            IconButton(onClick = {
-                view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                view.playSoundEffect(SoundEffectConstants.CLICK)
-                onBack()
-            }, modifier = Modifier.align(Alignment.CenterStart)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = MaterialTheme.colorScheme.onSurface)
+            IconButton(
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    view.playSoundEffect(SoundEffectConstants.CLICK)
+                    onBack()
+                },
+                modifier = Modifier.align(Alignment.CenterStart).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = MaterialTheme.colorScheme.primary)
             }
-            Text("EcoScan", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(Color(0xFF4CAF50), CircleShape)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "IA Scanner",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
     }
 }
