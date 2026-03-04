@@ -244,11 +244,11 @@ private fun DetectionOverlay(detections: List<Detection>, imageSize: Size) {
     }
 }
 
-// OJO AQUÍ: Las 6 clases maestras nuevas
+// OJO AQUÍ: Clases actualizadas según el nuevo dataset
 private fun postProcessYoloV8(floatArray: FloatArray, numElements: Int): List<Detection> {
 
-    // Diccionario actualizado con el dataset optimizado
-    val labels = listOf("Biodegradable", "cardboard", "glass", "metal", "paper", "plastic")
+    // Diccionario actualizado con el dataset optimizado (7 clases)
+    val labels = listOf("Biodegradable", "glass", "metal", "paper", "plastic", "textil", "wood")
 
     val confThreshold = 0.40f // Certeza mínima para mostrarlo (40%)
     val iouThreshold = 0.50f

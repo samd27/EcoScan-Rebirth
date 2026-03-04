@@ -73,12 +73,13 @@ object ClasificadorEcoScan {
 
     fun obtenerInfoContenedor(etiqueta: String): InfoResiduo {
         return when (etiqueta.lowercase()) {
-            "biodegradable" -> InfoResiduo("Residuo Orgánico", TipoContenedor.ORGANICO, "Desechar en contenedor de orgánicos. Retira cualquier etiqueta adhesiva y escurre el exceso de líquido antes de tirarlas.")
-            "cardboard" -> InfoResiduo("Cartón", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor de inorgánicos o contenedor para cartón. Desarma la caja, pliégala para ahorrar espacio y retira la cinta adhesiva.")
-            "glass" -> InfoResiduo("Vidrio", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor de inorgánicos o contenedor para vidrio. Retira tapas y corchos, enjuaga el interior y deposítalos con cuidado.")
-            "metal" -> InfoResiduo("Metal / Lata", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor de inorgánicos o contenedor para metales. Vacía el contenido, enjuaga ligeramente y aplasta la lata.")
-            "paper" -> InfoResiduo("Papel", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor de inorgánicos o contenedor para papel. El material debe estar seco, limpio y sin grapas o clips.")
-            "plastic" -> InfoResiduo("Plástico", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor de inorgánicos o contenedor para plásticos PET. Vacía el líquido, aplasta la botella y deposita la tapa por separado.")
+            "biodegradable" -> InfoResiduo("Residuo Orgánico", TipoContenedor.ORGANICO, "Desechar en contenedor de orgánicos. Retira cualquier etiqueta adhesiva y escurre el exceso de líquido.")
+            "glass" -> InfoResiduo("Vidrio", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor para vidrio. Retira tapas y corchos, enjuaga el interior y deposítalos con cuidado.")
+            "metal" -> InfoResiduo("Metal / Lata", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor para metales. Vacía el contenido, enjuaga ligeramente y aplasta la lata.")
+            "paper" -> InfoResiduo("Papel", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor para papel. El material debe estar seco, limpio y sin grapas o clips.")
+            "plastic" -> InfoResiduo("Plástico", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor para plásticos PET. Vacía el líquido y aplasta la botella.")
+            "textil" -> InfoResiduo("Textil / Ropa", TipoContenedor.MANEJO_ESPECIAL, "Si está en buen estado, considera donarla. Si es retacería, llévala a centros de reciclaje textil específicos.")
+            "wood" -> InfoResiduo("Madera", TipoContenedor.ORGANICO, "La madera natural es biodegradable. Si está tratada con barnices o pinturas, debe ir a manejo especial o escombro.")
             else -> InfoResiduo("Basura General", TipoContenedor.INORGANICO_NO_RECICLABLE, "Residuo mixto o no reciclable. Se irá al relleno sanitario.")
         }
     }
