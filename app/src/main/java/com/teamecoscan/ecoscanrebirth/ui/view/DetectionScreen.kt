@@ -31,16 +31,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size as ComposeSize
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
@@ -58,10 +54,11 @@ import java.nio.channels.FileChannel
 import java.util.concurrent.Executors
 import kotlin.math.max
 import kotlin.math.min
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 data class Detection(val boundingBox: RectF, val label: String, val confidence: Float)
 
-// Función nativa para cargar el modelo
 private fun loadModelFile(context: Context, modelName: String): ByteBuffer {
     val assetFileDescriptor = context.assets.openFd(modelName)
     val fileInputStream = FileInputStream(assetFileDescriptor.fileDescriptor)
@@ -79,8 +76,7 @@ fun DetectionScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val vibrator = remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager =
-                context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vibratorManager.defaultVibrator
         } else {
             @Suppress("DEPRECATION")
@@ -99,10 +95,8 @@ fun DetectionScreen(onBack: () -> Unit) {
         )
     } ?: InfoResiduo(nombreTraducido = "", contenedor = TipoContenedor.DESCONOCIDO, consejoExtra = "", confidence = 0f)
 
-
-    // Efecto de vibración cuando la IA está muy segura de haber encontrado basura
     LaunchedEffect(detections) {
-        if (detections.any { it.confidence > 0.70f }) {
+        if (detections.any { it.confidence > 0.80f }) {
             vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
         }
     }
@@ -115,7 +109,7 @@ fun DetectionScreen(onBack: () -> Unit) {
         DetectionOverlay(detections = detections, imageSize = imageSize)
         Column(modifier = Modifier.fillMaxSize()) {
             CustomTopBar(onBack = onBack)
-            Box(modifier = Modifier.weight(1f)) // Espacio flexible para empujar la tarjeta hacia abajo
+            Box(modifier = Modifier.weight(1f))
             TarjetaInstruccion(info = infoResiduo)
         }
     }
@@ -132,9 +126,7 @@ private fun CameraAnalysisView(
     val interpreter = remember {
         try {
             val modelBuffer = loadModelFile(context, "best_float16.tflite")
-            val options = Interpreter.Options().apply {
-                setNumThreads(4) // Usar múltiples núcleos de tu dispositivo
-            }
+            val options = Interpreter.Options().apply { setNumThreads(4) }
             Interpreter(modelBuffer, options)
         } catch (e: Exception) {
             Log.e("DetectionScreen", "Error loading TFLite model", e)
@@ -154,7 +146,6 @@ private fun CameraAnalysisView(
             cameraProviderFuture.addListener({
                 val cameraProvider = cameraProviderFuture.get()
                 val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
-
                 val imageAnalysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
@@ -165,7 +156,6 @@ private fun CameraAnalysisView(
                         val bitmap = imageProxy.toBitmap()
                         val imageSize = Size(bitmap.width, bitmap.height)
 
-                        // 1. Resize y Normalización
                         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 640, 640, true)
                         val inputBuffer = ByteBuffer.allocateDirect(4 * 640 * 640 * 3)
                         inputBuffer.order(ByteOrder.nativeOrder())
@@ -179,16 +169,13 @@ private fun CameraAnalysisView(
                             inputBuffer.putFloat((pixelValue and 0xFF) / 255.0f)
                         }
 
-                        // 2. Cálculo dinámico de la memoria
-                        val outputShape = interpreterInstance.getOutputTensor(0).shape() // [1, numElements, 8400]
+                        val outputShape = interpreterInstance.getOutputTensor(0).shape()
                         val numElements = outputShape[1]
                         val outputBuffer = ByteBuffer.allocateDirect(4 * numElements * 8400)
                         outputBuffer.order(ByteOrder.nativeOrder())
 
-                        // 3. Inferencia
                         interpreterInstance.run(inputBuffer, outputBuffer.rewind())
 
-                        // 4. Leer resultados
                         val floatArray = FloatArray(numElements * 8400)
                         outputBuffer.rewind()
                         outputBuffer.asFloatBuffer().get(floatArray)
@@ -233,9 +220,8 @@ private fun DetectionOverlay(detections: List<Detection>, imageSize: Size) {
                 boundingBox.bottom * scaleY
             )
 
-            // Dibujar la caja con estilo Premium
             drawRect(
-                color = Color(0xFF8BC34A), // Verde característico
+                color = Color(0xFF8BC34A),
                 topLeft = Offset(rect.left, rect.top),
                 size = ComposeSize(rect.width(), rect.height()),
                 style = Stroke(width = 3.dp.toPx())
@@ -244,18 +230,15 @@ private fun DetectionOverlay(detections: List<Detection>, imageSize: Size) {
     }
 }
 
-// OJO AQUÍ: Clases actualizadas según el nuevo dataset
 private fun postProcessYoloV8(floatArray: FloatArray, numElements: Int): List<Detection> {
-
-    // Diccionario actualizado con el dataset optimizado (7 clases)
     val labels = listOf("Biodegradable", "glass", "metal", "paper", "plastic", "textil", "wood")
 
-    val confThreshold = 0.40f // Certeza mínima para mostrarlo (40%)
-    val iouThreshold = 0.50f
-    val numDetections = 8400 // Rejilla estándar de YOLOv8
+    // AJUSTE DE SENSIBILIDAD GENERAL
+    val confThreshold = 0.60f // Subimos el umbral base significativamente
+    val iouThreshold = 0.40f // Más estricto para evitar duplicados
+    val numDetections = 8400
     val detections = mutableListOf<Detection>()
 
-    // Transponer la matriz matemática
     val transposedOutput = Array(numDetections) { FloatArray(numElements) }
     for (i in 0 until numElements) {
         for (j in 0 until numDetections) {
@@ -274,20 +257,22 @@ private fun postProcessYoloV8(floatArray: FloatArray, numElements: Int): List<De
             }
         }
 
-        if (maxScore > confThreshold) {
+        // REGLA DE "VETO" PARA PAPEL: Si es papel, le exigimos un 75% de certeza
+        val isPaper = classId != -1 && labels[classId] == "paper"
+        val minRequiredConfidence = if (isPaper) 0.75f else confThreshold
+
+        if (maxScore > minRequiredConfidence) {
             val centerX = detectionArray[0]
             val centerY = detectionArray[1]
             val width = detectionArray[2]
             val height = detectionArray[3]
-            val left = centerX - width / 2
-            val top = centerY - height / 2
-            val right = centerX + width / 2
-            val bottom = centerY + height / 2
+            val left = (centerX - width / 2) / 640f
+            val top = (centerY - height / 2) / 640f
+            val right = (centerX + width / 2) / 640f
+            val bottom = (centerY + height / 2) / 640f
 
-            val rect = RectF(left / 640f, top / 640f, right / 640f, bottom / 640f)
-
-            // Asignar el nombre
-            val labelName = if (classId != -1 && classId < labels.size) labels[classId] else "Objeto_Desc_$classId"
+            val rect = RectF(left, top, right, bottom)
+            val labelName = if (classId != -1 && classId < labels.size) labels[classId] else "Unknown"
             detections.add(Detection(rect, labelName, maxScore))
         }
     }
@@ -334,7 +319,7 @@ private fun calculateIOU(rect1: RectF, rect2: RectF): Float {
 @Composable
 private fun CustomTopBar(onBack: () -> Unit) {
     val view = LocalView.current
-    ElevatedCard(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 40.dp, start = 16.dp, end = 16.dp),

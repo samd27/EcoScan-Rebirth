@@ -74,12 +74,12 @@ object ClasificadorEcoScan {
     fun obtenerInfoContenedor(etiqueta: String): InfoResiduo {
         return when (etiqueta.lowercase()) {
             "biodegradable" -> InfoResiduo("Residuo Orgánico", TipoContenedor.ORGANICO, "Desechar en contenedor de orgánicos. Retira cualquier etiqueta adhesiva y escurre el exceso de líquido.")
-            "glass" -> InfoResiduo("Vidrio", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor para vidrio. Retira tapas y corchos, enjuaga el interior y deposítalos con cuidado.")
+            "glass" -> InfoResiduo("Vidrio", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor para vidrio o inorgánicos. Retira tapas y corchos, y enjuaga el interior.")
             "metal" -> InfoResiduo("Metal / Lata", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor para metales. Vacía el contenido, enjuaga ligeramente y aplasta la lata.")
-            "paper" -> InfoResiduo("Papel", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor para papel. El material debe estar seco, limpio y sin grapas o clips.")
-            "plastic" -> InfoResiduo("Plástico", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor para plásticos PET. Vacía el líquido y aplasta la botella.")
-            "textil" -> InfoResiduo("Textil / Ropa", TipoContenedor.MANEJO_ESPECIAL, "Si está en buen estado, considera donarla. Si es retacería, llévala a centros de reciclaje textil específicos.")
-            "wood" -> InfoResiduo("Madera", TipoContenedor.ORGANICO, "La madera natural es biodegradable. Si está tratada con barnices o pinturas, debe ir a manejo especial o escombro.")
+            "paper" -> InfoResiduo("Papel / Cartón", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor para papel. Asegúrate de que esté seco, sin grasa y retira cualquier cinta adhesiva o grapas.")
+            "plastic" -> InfoResiduo("Plástico", TipoContenedor.INORGANICO_RECICLABLE, "Desechar en contenedor para plásticos PET. Vacía el líquido, aplasta la botella y deposita la tapa por separado.")
+            "textil" -> InfoResiduo("Textil / Ropa", TipoContenedor.MANEJO_ESPECIAL, "Si está en buen estado, considera donarla. Si es retacería o trapos viejos, llévalos a puntos de reciclaje textil específicos.")
+            "wood" -> InfoResiduo("Madera", TipoContenedor.ORGANICO, "La madera natural es biodegradable. Si está barnizada, pintada o tratada químicamente, debe ir a centros de manejo especial o escombro.")
             else -> InfoResiduo("Basura General", TipoContenedor.INORGANICO_NO_RECICLABLE, "Residuo mixto o no reciclable. Se irá al relleno sanitario.")
         }
     }
